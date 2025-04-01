@@ -122,7 +122,6 @@ Crea una consulta que obtenga la descripción de los artículos, el precio y el 
 Para ello, realiza un INNER JOIN entre las tablas articulo y vendedor basándote en la relación entre id_vendedor y id_departamento.
 */
 -- 1
-select * from departamento;
 SELECT v.nombre, d.descripcion
 FROM vendedor v
 JOIN departamento d
@@ -132,7 +131,7 @@ ON v.id_departamento = d.id_departamento;
 SELECT a.descripcion, a.precio, v.nombre AS vendedor
 FROM articulo a
 JOIN vendedor v
-ON a.id_departamento = v.id_vendedor
+ON a.id_departamento = v.id_vendedor;
 
 /*
 LEFT JOIN:
@@ -148,7 +147,17 @@ Si algún artículo no tiene marca asignada, debe aparecer como NULL.
 Usa un LEFT JOIN entre las tablas articulo y marca.
 
 */
+-- 1
+SELECT d.descripcion, v.nombre
+FROM vendedor v
+LEFT JOIN departamento d
+ON d.id_departamento = v.id_departamento;
 
+-- 2
+SELECT a.descripcion as producto, m.descripcion as marca
+FROM articulo a
+LEFT JOIN marca m
+ON a.id_marca = m.id_marca;
 
 /*
 RIGHT JOIN:
