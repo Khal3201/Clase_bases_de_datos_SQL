@@ -169,4 +169,16 @@ y departamento.
 
 Ejercicio 2: 
 Realiza una consulta que devuelva la descripción de los artículos y el nombre del vendedor que los vende.
-Si un artículo no tiene vendedor asignado, muestra NULL en la columna del vendedor. Usa un RIGHT JOIN entre articulo y vendedor.*/
+Si un artículo no tiene vendedor asignado, muestra NULL en la columna del vendedor. Usa un RIGHT JOIN entre articulo y vendedor.
+*/
+-- 1
+SELECT v.nombre, d.descripcion
+FROM vendedor v
+RIGHT JOIN departamento d
+ON v.id_departamento = d.id_departamento;
+
+-- 2
+SELECT a.descripcion AS producto, v.nombre AS vendedor
+FROM vendedor v
+RIGHT JOIN articulo a
+ON a.id_departamento = v.id_departamento;
