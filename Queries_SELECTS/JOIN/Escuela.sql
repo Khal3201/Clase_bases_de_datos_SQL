@@ -121,16 +121,36 @@ Escribe una consulta que liste todas las materias junto con el nombre del maestr
 Si alguna materia no tiene maestro asignado, debe aparecer como NULL. Usa un LEFT JOIN entre las tablas materia y maestro.
 */
 
+-- 1
+SELECT g.grupo, e.nombre
+FROM grupo g
+LEFT JOIN estudiante e
+ON g.id_grupo = e.id_grupo;
 
-/*
-RIGHT JOIN:
+-- 2
+SELECT m.descripcion, ma.nombre
+FROM materia m
+LEFT JOIN maestro ma
+ON m.id_maestro = ma.id_maestro;
 
-Ejercicio 1:
-Crea una consulta que muestre todos los estudiantes y, si están asignados a algún grupo, el nombre del grupo. 
-Si un estudiante no está asignado a ningún grupo, la consulta debe mostrar NULL en la columna del grupo. 
-Usa un RIGHT JOIN entre estudiante y grupo.
+-- RIGHT JOIN:
 
-Ejercicio 2:
-Realiza una consulta que devuelva el nombre de los estudiantes y el grupo al que pertenecen. 
-Si un grupo no tiene estudiantes, muestra NULL en la columna del estudiante. Usa un RIGHT JOIN entre estudiante y grupo.
-*/
+-- 1
+-- Crea una consulta que muestre todos los estudiantes y, si están asignados a algún grupo, el nombre del grupo.
+-- Si un estudiante no está asignado a ningún grupo, la consulta debe mostrar NULL en la columna del grupo.
+-- Usa un RIGHT JOIN entre estudiante y grupo.
+
+SELECT e.nombre, g.grupo
+FROM estudiante e
+RIGHT JOIN grupo g
+ON e.id_grupo = g.id_grupo;
+
+-- 2
+-- Realiza una consulta que devuelva el nombre de los estudiantes y el grupo al que pertenecen.
+-- Si un grupo no tiene estudiantes, muestra NULL en la columna del estudiante.
+-- Usa un RIGHT JOIN entre estudiante y grupo.
+
+SELECT e.nombre, g.grupo
+FROM estudiante e
+RIGHT JOIN grupo g
+ON e.id_grupo = g.id_grupo;
