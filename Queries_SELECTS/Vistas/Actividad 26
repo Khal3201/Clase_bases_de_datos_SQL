@@ -1,0 +1,1016 @@
+USE sakila;
+-- 1. Muestra los títulos de todas las películas junto con el nombre de la categoría a la que pertenecen.
+CREATE VIEW pelicula_categoria AS
+SELECT f.title, c.name
+FROM film f
+JOIN film_category fc
+ON f.film_id = fc.film_id
+JOIN category c
+ON fc.category_id = c.category_id;
+
+-- 2. Lista todas las películas con el idioma en que están habladas. Si alguna película no tiene idioma, muestra "NULL".
+CREATE VIEW pelicula_idioma AS
+SELECT f.title, l.name AS language
+FROM film f
+LEFT JOIN language l
+on f.language_id = l.language_id;
+
+-- 3, Muestra todas las categorías, y si tienen películas,
+-- el número de películas en esa categoría. Si no tienen, muestra 0.
+CREATE VIEW categoria_cantidad_de_peliculas AS
+SELECT c.name, COUNT(fc.film_id) AS films
+FROM category c
+JOIN film_category fc
+ON c.category_id = fc.category_id
+GROUP BY c.name;
+
+-- 4. Lista todos los clientes y cuánto dinero han pagado en total.
+-- Si no han hecho pagos, muestra 0.
+CREATE VIEW cliente_pago_total AS
+SELECT c.customer_id, SUM(p.amount) AS total_payment
+FROM customer c
+JOIN payment p
+ON c.customer_id = p.customer_id
+GROUP BY c.customer_id;
+
+-- 5. Muestra todas las direcciones y, si hay una tienda en esa dirección, muestra su ID.
+CREATE VIEW direccion_id_tienda AS
+SELECT a.address, s.store_id
+FROM address a
+LEFT JOIN store s
+ON a.address_id = s.address_id
+ORDER BY a.address_id;
+    
+-- 6. Muestra la fecha de renta y el título de la película que fue rentada.
+CREATE VIEW renta_pelicula AS
+SELECT r.rental_date, f.title
+FROM rental r
+JOIN inventory i
+ON r.inventory_id = i.inventory_id
+JOIN film f
+ON i.film_id = f.film_id;
+
+-- 7. Lista todos los empleados y la tienda en la que trabajan. 
+-- Si algún empleado no tiene tienda asignada, muestra NULL.
+CREATE VIEW empleado_tienda_asignada AS
+SELECT CONCAT(st.first_name, st.last_name) AS staff, s.store_id
+FROM staff st
+JOIN store s
+ON st.store_id = s.manager_staff_id;
+
+-- 8. Muestra todas las ciudades y la cantidad de clientes que viven en ellas. 
+-- Si no hay clientes, muestra 0.
+CREATE VIEW ciudad_clientes AS
+SELECT c.city, COUNT(cu.customer_id) AS customers
+FROM customer cu
+JOIN address a
+ON a.address_id = cu.address_id
+JOIN city c
+ON a.city_id = c.city_id
+GROUP BY c.city;
+
+-- 9. Lista los clientes junto con las películas que han rentado.
+CREATE VIEW cliente_pelicula_rentada AS 
+SELECT CONCAT(cu.first_name, " ", cu.last_name) AS customer, f.title
+FROM customer cu
+JOIN rental r
+ON cu.customer_id = r.customer_id
+JOIN inventory i
+ON r.inventory_id = i.inventory_id
+JOIN film f
+ON i.film_id = f.film_id
+GROUP BY f.film_id;
+
+-- 10. Muestra todas las películas y cuántas veces han sido rentadas. 
+-- Incluye las que nunca se han rentado.
+CREATE VIEW pelicula_veces_rentada AS
+SELECT f.title, COUNT(r.rental_id) AS times_rented
+FROM film f
+LEFT JOIN inventory i ON f.film_id = i.film_id
+LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+GROUP BY f.film_id, f.title;
+
+-- 11. Muestra todos los actores junto con la cantidad de películas en las que han actuado.
+-- Si un actor no ha actuado en ninguna película, mostrar 0.
+CREATE VIEW actor_cantidad_de_peliculas AS
+SELECT CONCAT(a.first_name," " ,a.last_name) AS actor, COUNT(fa.film_id) AS total_films
+FROM actor a
+LEFT JOIN film_actor fa
+ON a.actor_id = fa.actor_id
+GROUP BY a.actor_id;
+
+-- 12. Muestra todas las tiendas, incluso si no tienen empleados asignados, 
+-- junto con la cantidad de empleados que trabajan en cada una.
+
+CREATE VIEW tienda_empleados AS
+SELECT s.store_id, COUNT(st.staff_id) AS total_staff
+FROM store s
+LEFT JOIN staff st ON s.store_id = st.store_id
+GROUP BY s.store_id;
+
+
+-- Actividad 23
+
+-- Muestra los títulos de las películas que tienen la misma duración que la
+-- película 'ALIEN CENTER'.
+CREATE VIEW pelicula_duracion_alien_center AS
+SELECT title
+FROM film
+WHERE length = (
+	SELECT length
+    FROM film 
+    WHERE title = 'ALIEN CENTER'
+    );
+
+-- Muestra los nombres de los clientes que han hecho al menos un pago mayor a
+-- 5 dólares.
+CREATE VIEW cliente_pago_mayor AS
+SELECT CONCAT(first_name,' ' ,last_name) AS customer
+FROM customer
+WHERE customer_id IN (
+ SELECT customer_id
+ FROM payment
+ WHERE amount > 5
+);
+
+-- Muestra los títulos de las películas que tienen el mismo precio de renta que la
+-- película 'ZOOLANDER FICTION'.
+CREATE VIEW pelicula_renta_ZoolanderFiction AS
+SELECT title
+FROM film
+WHERE rental_rate = (
+	SELECT rental_rate
+    FROM film
+    WHERE title = 'ZOOLANDER FICTION'
+);
+
+-- Muestra los nombres de los actores que actuaron en la película
+-- 'GHOSTBUSTERS ELF'.
+CREATE VIEW actor_pelicula_GhostbustersElf AS
+SELECT CONCAT(first_name, ' ', last_name) AS actor
+FROM actor
+WHERE actor_id IN (
+	SELECT fa.actor_id
+    FROM film_actor fa
+    JOIN film f
+    ON fa.film_id = f.film_id
+    WHERE f.title = 'GHOSTBUSTERS ELF'
+);
+
+-- Muestra las películas cuya duración es mayor al promedio de todas las
+-- películas.
+CREATE VIEW pelicula_mayor_al_promedio AS
+SELECT title
+FROM film
+WHERE length > (
+	SELECT AVG(length)
+    FROM film
+);
+
+-- Lista los nombres de los clientes que han realizado al menos un pago.
+CREATE VIEW cliente_pago AS
+SELECT CONCAT(first_name, ' ', last_name) AS customer
+FROM customer
+WHERE customer_id IN(
+	SELECT customer_id
+    FROM payment
+);
+
+-- Muestra los títulos de las películas que nunca han sido rentadas.
+CREATE VIEW pelicula_no_rentada AS
+SELECT title
+FROM film f
+WHERE NOT EXISTS (
+ SELECT 1
+ FROM inventory i
+ JOIN rental r ON r.inventory_id = i.inventory_id
+ WHERE i.film_id = f.film_id
+);
+
+-- Muestra el nombre de las categorías que tienen más de 50 películas.
+CREATE VIEW categoria_50_peliculas AS
+SELECT c.name
+FROM category c
+JOIN film_category fc ON c.category_id = fc.category_id
+GROUP BY c.name
+HAVING COUNT(fc.film_id) > (
+    SELECT 50
+);
+
+-- Muestra los nombres de los empleados que trabajan en la tienda que tiene
+--  más películas en inventario.
+CREATE VIEW empleado_mas_peliculas_inventario AS 
+SELECT CONCAT(st.first_name, ' ', st.last_name) AS staff
+FROM staff st
+JOIN store s ON st.store_id = s.store_id
+WHERE s.store_id = (
+    SELECT i.store_id
+    FROM inventory i
+    GROUP BY i.store_id
+    ORDER BY COUNT(i.inventory_id) DESC
+    LIMIT 1
+);
+
+-- Muestra los títulos de las películas que tienen el mismo rating que la película
+-- 'ACADEMY DINOSAUR'.
+CREATE VIEW pelicula_rating_AcademyDinosaur AS
+SELECT title
+FROM film
+WHERE rating = (
+	SELECT rating
+    FROM film
+    WHERE title = 'ACADEMY DINOSAUR'
+);
+
+-- Muestra el nombre de los actores que han participado en más de 20
+-- películas.
+CREATE VIEW actor_mas_20_peliculas AS
+SELECT CONCAT(a.first_name, ' ', a.last_name) AS actor
+FROM actor a 
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+GROUP BY a.actor_id
+HAVING COUNT(fa.actor_id) > (
+	SELECT 20
+);
+-- Muestra los títulos de las películas que tienen el mismo costo de reposición
+-- que la película 'CRUSADE HONEY'.
+CREATE VIEW pelicula_costo_reposicion_CrusadeHoney AS
+SELECT title
+FROM film
+WHERE replacement_cost = (
+	SELECT replacement_cost
+    FROM film
+    WHERE title = 'CRUSADE HONEY'
+);
+
+
+
+
+
+-- ACTIVIDAD 24
+
+DROP SCHEMA IF EXISTS liga_futbol;
+
+CREATE SCHEMA liga_futbol;
+
+USE liga_futbol;
+
+CREATE TABLE categoria (
+  id_categoria INT PRIMARY KEY AUTO_INCREMENT,
+  nombre VARCHAR(20) NOT NULL,
+  edad_minima INT NOT NULL,
+  edad_maxima INT NOT NULL
+);
+
+CREATE TABLE arbitro (
+  id_arbitro INT PRIMARY KEY AUTO_INCREMENT,
+  nombre VARCHAR(50),
+  apellido VARCHAR(50)
+);
+
+CREATE TABLE equipo (
+  id_equipo INT PRIMARY KEY AUTO_INCREMENT,
+  nombre VARCHAR(100) NOT NULL,
+  entrenador VARCHAR(100),
+  id_categoria INT,
+  FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
+);
+
+CREATE TABLE jugador (
+  id_jugador INT PRIMARY KEY AUTO_INCREMENT,
+  nombre VARCHAR(100),
+  apellido VARCHAR(100),
+  telefono VARCHAR(10),
+  direccion VARCHAR(50),
+  posicion VARCHAR(20),
+  id_equipo INT,
+  FOREIGN KEY (id_equipo) REFERENCES equipo(id_equipo)
+);
+
+INSERT INTO categoria (nombre, edad_minima, edad_maxima) VALUES
+('Sub-10', 6, 10),
+('Sub-12', 9, 12),
+('Sub-14', 12, 14),
+('Sub-16', 14, 16),
+('Sub-18', 16, 18),
+('Adultos', 18, 40),
+('Veteranos', 40, 60),
+('Sub-8', 5, 8),
+('Sub-11', 8, 11),
+('Sub-13', 11, 13),
+('Sub-15', 13, 15),
+('Sub-17', 15, 17),
+('Sub-19', 17, 19),
+('Master', 30, 50),
+('Super Veteranos', 50, 70);
+
+-- Agregar equipos
+INSERT INTO equipo (nombre, entrenador, id_categoria) VALUES
+('Halcones Negros', NULL, 3),
+('Lobos Grises', 'Andrea Martínez', NULL),
+('Panteras Rojas', 'Jorge Ramírez', 5),
+('Cóndores Dorados', 'Elena Sánchez', 6),
+('Osos del Norte', NULL, 7);
+
+-- Agregar árbitros
+INSERT INTO arbitro (nombre, apellido) VALUES
+('Sergio', 'Navarro'),
+(NULL, 'Fernández'),
+('Roberto', NULL),
+('Carmen', 'Ortega'),
+(NULL, NULL);
+
+-- Agregar jugadores
+INSERT INTO jugador (nombre, apellido, telefono, direccion, posicion, id_equipo) VALUES
+('Javier', 'Gómez', '5556789123', 'Avenida 1', 'Delantero', 1),
+('Adriana', 'Luna', NULL, 'Avenida 2', 'Mediocampista', 1),
+('Hugo', NULL, '5558901456', 'Avenida 3', 'Defensor', 1),
+('Sebastián', 'Ortega', '5559012567', NULL, 'Portero', 2),
+('Ricardo', 'Pineda', '5550123678', 'Avenida 5', NULL, 2),
+(NULL, 'Villalobos', '5551234789', 'Avenida 6', 'Mediocampista', 3),
+('Julio', 'Esquivel', '5552345890', 'Avenida 7', 'Defensor', NULL),
+('Diana', 'Cervantes', '5553456901', NULL, 'Portero', 3),
+('Francisco', NULL, '5554567012', 'Avenida 9', 'Delantero', 3),
+('Oscar', 'Santos', '5555678123', 'Avenida 10', NULL, 4),
+('Andrea', 'Peña', '5556789234', 'Avenida 11', 'Defensor', 4),
+('Rafael', 'Campos', NULL, 'Avenida 12', 'Portero', 5),
+('Beatriz', 'Mejía', '5558901456', NULL, 'Delantero', 5),
+('Humberto', 'Ramos', '5559012567', 'Avenida 14', 'Mediocampista', 5),
+('Elena', 'Moreno', '5550123678', 'Avenida 15', 'Defensor', NULL);
+
+-- Muestra los nombres de los equipos que pertenecen a la categoría con el rango de edad más amplio.
+CREATE VIEW equipo_edad_amplia AS
+SELECT DISTINCT nombre
+FROM equipo
+WHERE id_categoria = (
+    SELECT id_categoria
+    FROM categoria
+    ORDER BY (edad_maxima - edad_minima) DESC
+    LIMIT 1
+);
+
+-- Muestra los nombres de los jugadores que pertenecen al equipo con más jugadores registrados.
+CREATE VIEW jugador_equipo_grande AS
+SELECT DISTINCT nombre
+FROM jugador
+WHERE id_equipo = (
+    SELECT id_equipo
+    FROM jugador
+    GROUP BY id_equipo
+    ORDER BY COUNT(*) DESC
+    LIMIT 1
+);
+
+
+
+-- Muestra los nombres de los jugadores cuyo equipo no tiene entrenador registrado.
+CREATE VIEW  jugador_no_entrenador AS
+SELECT DISTINCT nombre
+FROM jugador
+WHERE id_equipo IN (
+    SELECT id_equipo
+    FROM equipo
+    WHERE entrenador IS NULL
+);
+
+
+-- Muestra los nombres de los jugadores cuya posición es la misma que la del jugador con ID 1.
+CREATE VIEW judagor_id_1 AS
+SELECT DISTINCT nombre
+FROM jugador
+WHERE posicion = (
+    SELECT posicion
+    FROM jugador
+    WHERE id_jugador = 1
+    LIMIT 1
+);
+
+
+
+
+Drop schema if exists departamento;
+
+Create schema departamento;
+
+Use departamento;
+
+Create table departamento(
+id_departamento INT PRIMARY KEY auto_increment,
+descripción text NOT NULL,
+ubicacion VARCHAR (100) NOT NULL
+);
+
+Create table vendedor (
+id_vendedor INT PRIMARY KEY auto_increment,
+nombre VARCHAR(100) NOT NULL,
+rfc VARCHAR (13) NOT NULL,
+teléfono VARCHAR (10),
+correo VARCHAR (100),
+salario DECIMAL (10,2),
+direccion VARCHAR (100)
+);
+
+Create table marca (
+id_marca INT PRIMARY KEY auto_increment,
+descripcion text
+);
+
+Create table articulo(
+id_articulo INT PRIMARY KEY auto_increment ,
+descripcion text ,
+precio DECIMAL (10,2) NOT NULL,
+existencia INT,
+id_departamento INT,
+id_marca INT,
+FOREIGN KEY (id_departamento) references departamento(id_departamento),
+FOREIGN KEY (id_marca) references marca(id_marca)
+);
+
+
+
+INSERT INTO departamento (descripción, ubicacion) VALUES
+('Electrónica', 'Piso 1'),
+('Electrónica', 'Piso 1'),
+('Electrónica', NULL),
+('Ropa', 'Piso 2'),
+('Ropa', NULL),
+('Electrónica', 'Piso 1'),
+('Hogar', 'Piso 3'),
+('Hogar', 'Piso 3'),
+('Electrónica', 'Piso 4'),
+(NULL, 'Piso 5'),
+('Deportes', 'Piso 6'),
+('Deportes', 'Piso 6'),
+('Muebles', NULL),
+('Muebles', 'Piso 7'),
+(NULL, 'Piso 8'),
+('Muebles', 'Piso 9'),
+('Tecnología', 'Piso 10'),
+('Tecnología', 'Piso 10'),
+(NULL, 'Piso 11'),
+('Tecnología', 'Piso 12'),
+('Ropa', 'Piso 13'),
+('Ropa', 'Piso 14'),
+('Accesorios', 'Piso 15'),
+('Accesorios', NULL);
+
+
+INSERT INTO vendedor (nombre, rfc, teléfono, correo, salario, direccion) VALUES
+('Juan Pérez', 'JUAP850101MN1', '5550123456', 'juan@example.com', 15000.50, 'Calle Ficticia 123'),
+('Juan Pérez', 'JUAP850101MN1', NULL, 'juan@example.com', 15000.50, 'Calle Ficticia 123'),
+('Carlos López', 'CALO890102HDF', '5550234567', NULL, 12000.00, 'Avenida Principal 456'),
+('Ana Martínez', 'ANAM760321MNL', '5550345678', 'ana@example.com', 18000.75, NULL),
+('Carlos López', 'CALO890102HDF', '5550234567', 'carlos@example.com', 12000.00, 'Avenida Principal 456'),
+('Sofía González', 'SOGU990305FQ4', NULL, NULL, 13000.00, 'Calle 7'),
+('Sofía González', 'SOGU990305FQ4', NULL, 'sofia@example.com', 13000.00, 'Calle 7'),
+('José Sánchez', 'JOSA901212J34', '5550456789', NULL, NULL, 'Calle Sol'),
+('José Sánchez', 'JOSA901212J34', '5550456789', 'jose@example.com', NULL, 'Calle Sol'),
+('Pedro Ramírez', 'PERA950101HR6', '5550567890', 'pedro@example.com', 14000.00, 'Calle Luna'),
+('Pedro Ramírez', 'PERA950101HR6', '5550567890', NULL, 14000.00, 'Calle Luna'),
+('Laura Díaz', 'LADI880507MJ2', '5550678901', 'laura@example.com', 16000.25, 'Calle del Sol'),
+('Laura Díaz', 'LADI880507MJ2', '5550678901', NULL, 16000.25, 'Calle del Sol'),
+('Pedro Jiménez', 'PEJI820321D56', NULL, 'pedro.jimenez@example.com', 15000.00, 'Calle 23'),
+('Pedro Jiménez', 'PEJI820321D56', NULL, NULL, NULL, 'Calle 23'),
+('Raúl Torres', 'RATO750603F24', '5550789012', 'raul@example.com', 19000.00, 'Calle Viento'),
+('Raúl Torres', 'RATO750603F24', '5550789012', 'raul@example.com', 19000.00, 'Calle Viento'),
+('Marta López', 'MALO950707M34', '5550890123', 'marta@example.com', 11000.00, NULL),
+('Marta López', 'MALO950707M34', NULL, 'marta@example.com', 11000.00, 'Calle Primavera'),
+('Eduardo Pérez', 'EDPE880111HDF', '5550901234', NULL, 20000.50, 'Calle Otoño'),
+('Eduardo Pérez', 'EDPE880111HDF', '5550901234', NULL, 20000.50, 'Calle Otoño'),
+('Claudia Ríos', 'CLRI950709H75', NULL, 'claudia@example.com', NULL, NULL);
+
+
+INSERT INTO marca (descripcion) VALUES
+('Samsung'),
+('Samsung'), 
+('Sony'),
+('Sony'), 
+('Apple'),
+('Apple'),
+('LG'),
+('LG'), 
+('Huawei'),
+('Huawei'), 
+('Xiaomi'),
+('Xiaomi'), 
+('Nokia'),
+('Nokia'), 
+('Motorola'),
+('Motorola'), 
+('Alcatel'),
+('Alcatel'), 
+('OnePlus'),
+('OnePlus'), 
+('Lenovo'),
+('Lenovo'); 
+
+INSERT INTO articulo (descripcion, precio, existencia, id_departamento, id_marca) VALUES
+('Smartphone Samsung', 5999.99, 10, 1, 1),
+('Smartphone Samsung', 5999.99, 10, 1, 1), 
+('Smartphone Sony', 6999.99, 15, 1, 2),
+('Smartphone Sony', 6999.99, 15, 1, 2), 
+('iPhone 13', 25999.99, 5, 2, 3),
+('iPhone 13', 25999.99, 5, 2, 3), 
+('Laptop HP', 8999.99, 7, 3, 4),
+('Laptop HP', 8999.99, 7, 3, 4), 
+('Tablet Huawei', 3599.99, 20, 4, 5),
+('Tablet Huawei', 3599.99, 20, 4, 5),
+('Televisor LG', 8999.99, 10, 5, 6),
+('Televisor LG', 8999.99, 10, 5, 6), 
+('Smartwatch Xiaomi', 1599.99, 25, 6, 7),
+('Smartwatch Xiaomi', 1599.99, 25, 6, 7), 
+('Auriculares Nokia', 1999.99, 30, 7, 8),
+('Auriculares Nokia', 1999.99, 30, 7, 8), 
+('Smartphone Motorola', 4999.99, 12, 8, 9),
+('Smartphone Motorola', 4999.99, 12, 8, 9),
+('Smartphone Alcatel', 3999.99, 50, 9, 10),
+('Smartphone Alcatel', 3999.99, 50, 9, 10), 
+('Smartphone OnePlus', 10999.99, 8, 10, 11),
+('Smartphone OnePlus', 10999.99, 8, 10, 11);
+
+
+-- Muestra los nombres de los vendedores cuyo salario es mayor al salario promedio de todos los vendedores.
+CREATE VIEW vendedor_salario_mayor_al_promedio AS
+SELECT DISTINCT nombre
+FROM vendedor
+WHERE salario > (
+    SELECT AVG(salario)
+    FROM vendedor
+    WHERE salario IS NOT NULL
+);
+
+-- Muestra la descripción y precio del artículo más caro del departamento con la ubicación 'Piso 1'.
+CREATE VIEW articulo_caro_piso_uno AS
+SELECT DISTINCT descripcion, precio
+FROM articulo
+WHERE id_departamento = (
+    SELECT id_departamento
+    FROM departamento
+    WHERE ubicacion = 'Piso 1'
+    LIMIT 1
+)
+AND precio = (
+    SELECT MAX(precio)
+    FROM articulo
+    WHERE id_departamento = (
+        SELECT id_departamento
+        FROM departamento
+        WHERE ubicacion = 'Piso 1'
+        LIMIT 1
+    )
+);
+
+
+-- Muestra los nombres de las marcas que tienen artículos registrados en el sistema.
+CREATE VIEW marca_articulo_registrado AS
+SELECT DISTINCT descripcion
+FROM marca
+WHERE id_marca IN (
+    SELECT DISTINCT id_marca
+    FROM articulo
+);
+
+
+-- Muestra los departamentos (solo su descripción) donde no hay ningún artículo registrado.
+CREATE VIEW departamento_no_articulo AS
+SELECT DISTINCT descripción
+FROM departamento
+WHERE id_departamento NOT IN (
+    SELECT DISTINCT id_departamento
+    FROM articulo
+    WHERE id_departamento IS NOT NULL
+);
+
+
+-- Muestra el nombre del o los vendedores que ganan el salario más alto.
+CREATE VIEW vendedor_salario_mas_alto AS
+SELECT DISTINCT nombre
+FROM vendedor
+WHERE salario = (
+    SELECT MAX(salario)
+    FROM vendedor
+);
+
+
+
+
+
+
+DROP DATABASE IF EXISTS Escuela;
+
+CREATE DATABASE Escuela;
+USE Escuela;
+
+-- Tabla Estudiante
+CREATE TABLE Estudiante (
+    id_estudiante INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    fecha_nacimiento DATE NOT NULL,
+    direccion TEXT NOT NULL,
+    telefono VARCHAR(20),
+    email VARCHAR(100)
+);
+
+-- Tabla Maestro
+CREATE TABLE Maestro (
+    id_maestro INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    especialidad VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20),
+    email VARCHAR(100)
+);
+
+-- Tabla Materia
+CREATE TABLE Materia (
+    id_materia INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT
+);
+
+-- Tabla Grupo
+CREATE TABLE Grupo (
+    id_grupo INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    id_maestro INT NOT NULL,
+    FOREIGN KEY (id_maestro) REFERENCES Maestro(id_maestro)
+);
+
+-- Tabla Aula (Moved before Horario)
+CREATE TABLE Aula (
+    id_aula INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    capacidad INT NOT NULL,
+    ubicacion VARCHAR(100) NOT NULL
+);
+
+-- Tabla Inscripción (Relación Estudiante - Grupo)
+CREATE TABLE Inscripcion (
+    id_inscripcion INT PRIMARY KEY AUTO_INCREMENT,
+    id_estudiante INT NOT NULL,
+    id_grupo INT NOT NULL,
+    fecha_inscripcion DATE NOT NULL,
+    FOREIGN KEY (id_estudiante) REFERENCES Estudiante(id_estudiante),
+    FOREIGN KEY (id_grupo) REFERENCES Grupo(id_grupo)
+);
+
+-- Tabla Calificación
+CREATE TABLE Calificacion (
+    id_calificacion INT PRIMARY KEY AUTO_INCREMENT,
+    id_estudiante INT NOT NULL,
+    id_materia INT NOT NULL,
+    calificacion DECIMAL(4,2) NOT NULL,
+    fecha DATE NOT NULL,
+    FOREIGN KEY (id_estudiante) REFERENCES Estudiante(id_estudiante),
+    FOREIGN KEY (id_materia) REFERENCES Materia(id_materia)
+);
+
+-- Tabla Horario (Now after Aula)
+CREATE TABLE Horario (
+    id_horario INT PRIMARY KEY AUTO_INCREMENT,
+    id_grupo INT NOT NULL,
+    id_materia INT NOT NULL,
+    id_aula INT NOT NULL,
+    dia_semana ENUM('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes') NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    FOREIGN KEY (id_grupo) REFERENCES Grupo(id_grupo),
+    FOREIGN KEY (id_materia) REFERENCES Materia(id_materia),
+    FOREIGN KEY (id_aula) REFERENCES Aula(id_aula)
+);
+
+-- Tabla Asistencia
+CREATE TABLE Asistencia (
+    id_asistencia INT PRIMARY KEY AUTO_INCREMENT,
+    id_estudiante INT NOT NULL,
+    id_grupo INT NOT NULL,
+    fecha DATE NOT NULL,
+    estado ENUM('Presente', 'Ausente', 'Justificado') NOT NULL,
+    FOREIGN KEY (id_estudiante) REFERENCES Estudiante(id_estudiante),
+    FOREIGN KEY (id_grupo) REFERENCES Grupo(id_grupo)
+);
+
+
+-- Inserts
+
+USE Escuela;
+
+-- Inserts for Estudiante
+
+INSERT INTO Estudiante (nombre, apellido, fecha_nacimiento, direccion, telefono, email) VALUES
+('Juan', 'Pérez', '2005-03-15', 'Calle 123', '555-1234', 'juan.perez@example.com'),
+('María', 'González', '2006-05-20', 'Avenida 456', '555-5678', 'maria.gonzalez@example.com'),
+('Luis', 'Martínez', '2004-11-12', 'Plaza 789', '555-9012', 'luis.martinez@example.com'),
+('Ana', 'López', '2005-02-28', 'Camino 321', '555-3456', 'ana.lopez@example.com'),
+('Carlos', 'Rodríguez', '2006-07-07', 'Callejón 654', '555-7890', 'carlos.rodriguez@example.com'),
+('Sofía', 'Hernández', '2004-09-09', 'Boulevard 987', '555-2345', 'sofia.hernandez@example.com'),
+('Diego', 'Ramírez', '2005-01-15', 'Carretera 147', '555-6789', 'diego.ramirez@example.com'),
+('Lucía', 'Torres', '2006-04-18', 'Avenida 258', '555-1122', 'lucia.torres@example.com'),
+('Pedro', 'Sánchez', '2004-06-25', 'Calle 369', '555-3344', 'pedro.sanchez@example.com'),
+('Elena', 'Castillo', '2005-12-05', 'Plaza 741', '555-5566', 'elena.castillo@example.com');
+
+-- Inserts for Maestro
+
+INSERT INTO Maestro (nombre, apellido, especialidad, telefono, email) VALUES
+('José', 'López', 'Matemáticas', '555-9876', 'jose.lopez@example.com'),
+('Claudia', 'Ramírez', 'Historia', '555-6543', 'claudia.ramirez@example.com'),
+('Miguel', 'Hernández', 'Ciencias', '555-3210', 'miguel.hernandez@example.com'),
+('Laura', 'Pérez', 'Lengua', '555-7777', 'laura.perez@example.com'),
+('Fernando', 'García', 'Física', '555-8888', 'fernando.garcia@example.com'),
+('Sara', 'Martínez', 'Química', '555-9999', 'sara.martinez@example.com'),
+('Carlos', 'Sánchez', 'Biología', '555-0000', 'carlos.sanchez@example.com'),
+('Ana', 'Rodríguez', 'Filosofía', '555-1234', 'ana.rodriguez@example.com'),
+('Jorge', 'Fernández', 'Inglés', '555-5678', 'jorge.fernandez@example.com'),
+('Lucía', 'Gómez', 'Geografía', '555-4321', 'lucia.gomez@example.com'),
+('Carlin', 'J', '"Matematicas"', '555-7050', 'IngenieroCarlangas@example.com' );
+
+-- Inserts for Materia
+
+INSERT INTO Materia (nombre, descripcion) VALUES
+('Matemáticas', 'Álgebra y Geometría'),
+('Historia', 'Historia Universal'),
+('Ciencias', 'Ciencias Naturales'),
+('Lengua', 'Gramática y Literatura'),
+('Física', 'Mecánica y Termodinámica'),
+('Química', 'Química Orgánica e Inorgánica'),
+('Biología', 'Estudio de la Vida'),
+('Filosofía', 'Pensamiento Crítico'),
+('Inglés', 'Idioma y Gramática Inglesa'),
+('Geografía', 'Geografía Mundial');
+
+-- Inserts for Grupo
+
+INSERT INTO Grupo (nombre, id_maestro) VALUES
+('Grupo A', 1),
+('Grupo B', 2),
+('Grupo C', 3),
+('Grupo D', 4),
+('Grupo E', 5),
+('Grupo F', 6),
+('Grupo G', 7),
+('Grupo H', 8),
+('Grupo I', 9),
+('Grupo J', 10);
+
+-- Inserts for Aula
+
+INSERT INTO Aula (nombre, capacidad, ubicacion) VALUES
+('Aula 101', 30, 'Edificio A'),
+('Aula 102', 25, 'Edificio A'),
+('Aula 201', 20, 'Edificio B'),
+('Aula 202', 35, 'Edificio B'),
+('Aula 301', 40, 'Edificio C'),
+('Aula 302', 30, 'Edificio C'),
+('Laboratorio 1', 20, 'Edificio D'),
+('Laboratorio 2', 20, 'Edificio D'),
+('Sala de Conferencias', 50, 'Edificio E'),
+('Aula 401', 30, 'Edificio F');
+
+-- Inserts for Inscripcion
+
+INSERT INTO Inscripcion (id_estudiante, id_grupo, fecha_inscripcion) VALUES
+(1, 1, '2024-01-15'),
+(2, 2, '2024-01-16'),
+(3, 3, '2024-01-17'),
+(4, 4, '2024-01-18'),
+(5, 5, '2024-01-19'),
+(6, 6, '2024-01-20'),
+(7, 7, '2024-01-21'),
+(8, 8, '2024-01-22'),
+(9, 9, '2024-01-23'),
+(10, 10, '2024-01-24');
+
+-- Inserts for Calificacion
+
+INSERT INTO Calificacion (id_estudiante, id_materia, calificacion, fecha) VALUES
+(1, 1, 85.50, '2024-03-01'),
+(2, 2, 90.00, '2024-03-02'),
+(3, 3, 78.25, '2024-03-03'),
+(4, 4, 88.75, '2024-03-04'),
+(5, 5, 92.50, '2024-03-05'),
+(6, 6, 80.00, '2024-03-06'),
+(7, 7, 85.00, '2024-03-07'),
+(8, 8, 89.25, '2024-03-08'),
+(9, 9, 87.50, '2024-03-09'),
+(10, 10, 91.00, '2024-03-10');
+
+-- Inserts for Horario
+
+INSERT INTO Horario (id_grupo, id_materia, id_aula, dia_semana, hora_inicio, hora_fin) VALUES
+(1, 1, 1, 'Lunes', '08:00', '09:30'),
+(2, 2, 2, 'Martes', '10:00', '11:30'),
+(3, 3, 3, 'Miércoles', '12:00', '13:30'),
+(4, 4, 4, 'Jueves', '14:00', '15:30'),
+(5, 5, 5, 'Viernes', '16:00', '17:30'),
+(6, 6, 6, 'Lunes', '08:00', '09:30'),
+(7, 7, 7, 'Martes', '10:00', '11:30'),
+(8, 8, 8, 'Miércoles', '12:00', '13:30'),
+(9, 9, 9, 'Jueves', '14:00', '15:30'),
+(10, 10, 10, 'Viernes', '16:00', '17:30');
+
+-- Inserts for Asistencia
+
+INSERT INTO Asistencia (id_estudiante, id_grupo, fecha, estado) VALUES
+(1, 1, '2024-01-10', 'Presente'),
+(2, 2, '2024-01-11', 'Ausente'),
+(3, 3, '2024-01-12', 'Justificado'),
+(4, 4, '2024-01-13', 'Presente'),
+(5, 5, '2024-01-14', 'Presente'),
+(6, 6, '2024-01-15', 'Ausente'),
+(7, 7, '2024-01-16', 'Presente'),
+(8, 8, '2024-01-17', 'Justificado'),
+(9, 9, '2024-01-18', 'Presente'),
+(10, 10, '2024-01-19', 'Ausente');
+
+
+
+
+-- Muestra los datos del estudiante o estudiantes que tienen la calificación más alta registrada.
+CREATE VIEW estudiante_calificacion_mas_alta AS
+SELECT *
+FROM estudiante
+WHERE id_estudiante IN (
+	SELECT id_estudiante
+    FROM calificacion
+	WHERE calificacion = (SELECT MAX(calificacion) FROM Calificacion)
+
+);
+
+-- Lista los nombres de los grupos que tienen clases programadas los días lunes.
+CREATE VIEW grupos_clases_lunes AS
+SELECT nombre
+FROM grupo
+WHERE id_grupo IN (
+	SELECT id_grupo
+    FROM horario
+    WHERE dia_semana = 'Lunes'
+);
+
+-- Muestra los nombres de los maestros que no tienen ningún grupo asignado.
+CREATE VIEW maestro_no_grupo AS
+SELECT *
+FROM maestro m
+WHERE NOT EXISTS (
+	SELECT 1
+    FROM grupo g
+    WHERE g.id_maestro = m.id_maestro
+);
+
+-- Muestra los nombres y apellidos de los estudiantes que están inscritos en el mismo grupo que el estudiante con ID 1.
+CREATE VIEW estudiante_inscrido_id_1 AS
+SELECT nombre, apellido
+FROM Estudiante
+WHERE id_estudiante IN (
+    SELECT id_estudiante
+    FROM Inscripcion
+    WHERE id_grupo = (
+        SELECT id_grupo
+        FROM Inscripcion
+        WHERE id_estudiante = 1
+    )
+);
+
+-- Muestra las materias que no tienen ninguna calificación registrada.
+CREATE VIEW materias_no_calificacion AS
+SELECT nombre
+FROM materia m
+WHERE NOT EXISTS (
+	SELECT 1
+    FROM calificacion c
+    WHERE m.id_materia = c.id_materia
+);
+
+
+
+
+
+
+
+
+-- Borra el esquema si ya existe y lo vuelve a crear
+DROP SCHEMA IF EXISTS juego;
+CREATE SCHEMA juego;
+USE juego;
+
+-- Crea la tabla 'juego' con restricciones adecuadas
+CREATE TABLE juego (
+    id_juego INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    genero VARCHAR(100) NOT NULL,
+    plataforma VARCHAR(100) NOT NULL,
+    desarrollador VARCHAR(100) NOT NULL,
+    fecha_lanzamiento DATE NOT NULL
+);
+
+-- Crea la tabla 'jugador'
+CREATE TABLE jugador (
+    id_jugador INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_usuario VARCHAR(100) NOT NULL,
+    correo_electronico VARCHAR(100) NOT NULL,
+    pais VARCHAR(100) NOT NULL
+);
+
+-- Crea la tabla 'proceso' con llaves foráneas
+CREATE TABLE proceso (
+    id_proceso INT PRIMARY KEY AUTO_INCREMENT,
+    nivel INT NOT NULL,
+    puntaje INT NOT NULL,
+    tiempo_jugado TIME NOT NULL,
+    id_jugador INT NOT NULL,
+    id_juego INT NOT NULL,
+    FOREIGN KEY (id_jugador) REFERENCES jugador(id_jugador),
+    FOREIGN KEY (id_juego) REFERENCES juego(id_juego)
+);
+
+-- Inserta juegos válidos (se eliminan registros duplicados o con valores nulos en campos NOT NULL)
+INSERT INTO juego (nombre, genero, plataforma, desarrollador, fecha_lanzamiento) VALUES
+('Cyberpunk 2077', 'RPG', 'PC, PS4, PS5, Xbox One, Xbox Series X/S', 'CD Projekt Red', '2020-12-10'),
+('Doom Eternal', 'FPS', 'PC, PS4, Xbox One', 'id Software', '2020-03-20'),
+('Animal Crossing: New Horizons', 'Simulación', 'Nintendo Switch', 'Nintendo', '2020-03-20'),
+('Stardew Valley', 'Simulación', 'PC, Consolas', 'ConcernedApe', '2016-02-26'),
+('Minecraft', 'Sandbox', 'PC, PS4, Xbox One, Switch', 'Mojang Studios', '2011-11-18'),
+('Resident Evil Village', 'Survival Horror', 'PC, PS5, Xbox Series X/S', 'Capcom', '2021-05-07'),
+('The Legend of Zelda: Breath of the Wild', 'Aventura', 'Nintendo Switch', 'Nintendo', '2017-03-03');
+
+-- Inserta jugadores válidos (se eliminan duplicados o valores nulos en campos NOT NULL)
+INSERT INTO jugador (nombre_usuario, correo_electronico, pais) VALUES
+('Carlos123', 'carlos123@email.com', 'México'),
+('TestUser', 'test@email.com', 'PaísDesconocido'),
+('MartaGame', 'marta@email.com', 'Perú'),
+('Sofia_97', 'sofia97@email.com', 'Chile'),
+('LuciaGamers', 'luciagamers@email.com', 'España');
+
+-- Inserta procesos válidos (sin valores nulos y con referencias válidas a id_jugador e id_juego)
+INSERT INTO proceso (nivel, puntaje, tiempo_jugado, id_jugador, id_juego) VALUES
+(10, 1500, '02:15:30', 1, 1),
+(5, 1000, '01:10:00', 2, 2),
+(20, 3500, '03:30:00', 3, 3),
+(15, 2200, '02:00:00', 4, 4),
+(30, 5000, '04:30:00', 5, 5);
+
+
+-- Muestra los nombres de los jugadores que han obtenido un puntaje mayor al promedio de todos los procesos.
+CREATE VIEW jugador_puntaje_mayor_al_promedio AS
+SELECT DISTINCT nombre_usuario
+FROM jugador
+WHERE id_jugador IN (
+    SELECT id_jugador
+    FROM proceso
+    WHERE puntaje > (
+        SELECT AVG(puntaje)
+        FROM proceso
+        WHERE puntaje IS NOT NULL
+    )
+);
+
+-- Muestra el nombre y plataforma del juego con el puntaje más alto registrado.
+CREATE VIEW juego_mas_puntaje AS
+SELECT DISTINCT nombre, plataforma
+FROM juego
+WHERE id_juego = (
+    SELECT id_juego
+    FROM proceso
+    WHERE puntaje = (
+        SELECT MAX(puntaje)
+        FROM proceso
+        WHERE puntaje IS NOT NULL
+    )
+    LIMIT 1
+);
+
+-- Muestra los nombres de los juegos que han sido jugados por jugadores de 'México'.
+CREATE VIEW juego_usuarios_México AS
+SELECT DISTINCT nombre
+FROM juego
+WHERE id_juego IN (
+    SELECT id_juego
+    FROM proceso
+    WHERE id_jugador IN (
+        SELECT id_jugador
+        FROM jugador
+        WHERE pais = 'México'
+    )
+);
+
+-- Muestra el nombre de los jugadores que han jugado más de un juego diferente.
+CREATE VIEW jugador_mas_de_un_juego AS
+SELECT DISTINCT nombre_usuario
+FROM jugador
+WHERE id_jugador IN (
+    SELECT id_jugador
+    FROM proceso
+    GROUP BY id_jugador
+    HAVING COUNT(DISTINCT id_juego) > 1
+);
+
+-- Muestra el nombre y género de los juegos cuyo desarrollador también haya creado otro juego.
+CREATE VIEW desarrollador_mas_de_un_juego AS
+SELECT DISTINCT nombre, genero
+FROM juego
+WHERE desarrollador IN (
+    SELECT desarrollador
+    FROM juego
+    GROUP BY desarrollador
+    HAVING COUNT(*) > 1
+);
