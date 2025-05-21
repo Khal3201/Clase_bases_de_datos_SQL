@@ -1,0 +1,202 @@
+USE sakila;
+
+-- Crea un procedimiento que reciba el customer_id y devuelva el nombre completo (first_name + last_name) como salida.
+
+DROP PROCEDURE IF EXISTS customer_name;
+DELIMITER $$
+
+CREATE PROCEDURE customer_name (
+IN id_customer int,
+OUT customer_name varchar(100)
+)
+BEGIN
+
+SELECT CONCAT(first_name,' ', last_name) 
+INTO customer_name
+FROM customer
+WHERE id_customer = customer_id;
+
+END $$
+
+DELIMITER ;
+
+CALL customer_name(16,@customer_name);
+SELECT @customer_name;
+
+
+-- Crear un procedimiento que reciba el nombre de una categoría
+-- (por ejemplo, 'Action') y devuelva cuántas películas hay en esa categoría.
+
+DROP PROCEDURE IF EXISTS category_search;
+
+DELIMITER $$
+
+CREATE PROCEDURE category_search(
+IN in_category_name varchar(100),
+OUT out_films int
+)
+BEGIN
+
+SELECT COUNT(f.film_id)
+INTO out_films
+FROM film f
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+WHERE LOWER(in_category_name) = LOWER(c.name)
+GROUP BY c.category_id;
+
+END $$
+DELIMITER ;
+
+CALL category_search('Travel',@out_films);
+SELECT @out_films AS total_films;
+
+
+
+
+
+-- Crea un procedimiento que reciba un customer_id y devuelva 1 si existe, o 0 si no.
+DROP PROCEDURE IF EXISTS customer_verify;
+
+DELIMITER $$
+
+CREATE PROCEDURE customer_verify(
+IN in_customer_id int,
+OUT out_check int
+)
+
+Begin
+
+SELECT EXISTS(
+	SELECT 1
+    FROM customer
+    WHERE in_customer_id = customer_id
+)
+INTO out_check;
+
+END $$
+
+DELIMITER ;
+
+CALL customer_verify(4,@out_check);
+SELECT @out_check;
+
+
+
+
+-- Crear un procedimiento que reciba un número (min_duracion) y muestre todas las películas que duran más que ese valor.
+
+DROP PROCEDURE IF EXISTS film_comparator;
+
+DELIMITER $$
+CREATE PROCEDURE film_comparator(
+IN in_min_duration int
+)
+Begin 
+SELECT title
+FROM film
+WHERE length > in_min_duration;
+
+END $$
+
+DELIMITER ;
+
+CALL film_comparator(180);
+
+
+
+
+
+-- Crea un procedimiento que reciba el customer_id y devuelva una lista de títulos de películas que ha rentado.
+DROP PROCEDURE IF EXISTS customer_rentals;
+
+DELIMITER $$
+CREATE PROCEDURE customer_rentals(
+IN in_customer_id int
+)
+BEGIN
+SELECT f.title
+FROM film f
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+WHERE in_customer_id = r.customer_id;
+END $$
+
+DELIMITER ;
+CALL customer_rentals(5);
+
+
+
+-- Crear un procedimiento que reciba el store_id y devuelva el total de dinero generado por esa tienda.
+
+DROP PROCEDURE IF EXISTS total_store_incomes;
+
+DELIMITER $$
+CREATE PROCEDURE total_store_incomes(
+IN in_store_id INT,
+OUT out_total_incomes DOUBLE
+)
+BEGIN
+SELECT SUM(p.amount)
+INTO out_total_incomes
+FROM payment p
+JOIN store s ON p.staff_id = s.manager_staff_id
+WHERE in_store_id = store_id;
+END $$
+
+DELIMITER ;
+
+CALL total_store_incomes(1,@out_total_incomes);
+SELECT @out_total_incomes;
+
+
+
+
+-- Crear un procedimiento que reciba el film_id y devuelva el número de copias disponibles en la tabla inventory.
+
+DROP PROCEDURE IF EXISTS total_film_inventory;
+DELIMITER $$
+CREATE PROCEDURE total_film_inventory(
+IN in_film_id int,
+OUT out_total_inventory int
+)
+
+BEGIN
+SELECT COUNT(film_id)
+INTO out_total_inventory
+FROM inventory
+WHERE in_film_id = film_id;
+END $$
+
+DELIMITER ;
+
+CALL total_film_inventory(1,@out_total_inventory);
+SELECT @out_total_inventory;
+
+
+
+/*
+
+FIX THIS
+
+-- Crear un procedimiento que reciba el film_id y muestre una lista con los nombres de los actores que participan en esa película.
+
+DROP PROCEDURE IF EXISTS actors_in_film;
+
+DELIMITER $$
+
+CREATE PROCEDURE actors_in_film(
+IN in_film_id int
+)
+
+BEGIN
+SELECT CONCAT(a.first_name,' ', a.last_name) AS actor
+FROM actor a
+JOIN film_actor fa ON a.actor_id = fa.actor_id
+WHERE in_film_id = fa.fim_id;
+END $$
+
+DELIMITER ;
+
+CALL actors_in_film(1);
+*/
