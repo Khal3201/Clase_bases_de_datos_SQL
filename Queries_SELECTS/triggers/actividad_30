@@ -1,0 +1,49 @@
+USE sakila2;
+
+DELIMITER $$
+
+-- 1. Trigger para actualizar last_update de la tabla customer cuando se actualice su address_id
+CREATE TRIGGER trg_update_customer_last_update
+BEFORE UPDATE ON customer
+FOR EACH ROW
+BEGIN
+    IF OLD.address_id != NEW.address_id THEN
+        SET NEW.last_update = CURRENT_TIMESTAMP;
+    END IF;
+END$$
+DELIMITER ;
+-- 2. Trigger para actualizar last_update de rental al insertar un nuevo payment
+DELIMITER $$ 
+CREATE TRIGGER trg_update_rental_last_update_on_payment
+AFTER INSERT ON payment
+FOR EACH ROW
+BEGIN
+    UPDATE rental
+    SET last_update = CURRENT_TIMESTAMP
+    WHERE rental_id = NEW.rental_id;
+END$$
+DELIMITER ;
+-- 3. Trigger para actualizar last_update de inventory cuando se actualice film_id
+DELIMITER $$
+CREATE TRIGGER trg_update_inventory_last_update
+BEFORE UPDATE ON inventory
+FOR EACH ROW
+BEGIN
+    IF OLD.film_id != NEW.film_id THEN
+        SET NEW.last_update = CURRENT_TIMESTAMP;
+    END IF;
+END$$
+DELIMITER ;
+-- 4. Trigger para actualizar last_update de staff cuando cambie first_name o last_name
+DELIMITER $$
+CREATE TRIGGER trg_update_staff_last_update
+BEFORE UPDATE ON staff
+FOR EACH ROW
+BEGIN
+    IF OLD.first_name != NEW.first_name OR OLD.last_name != NEW.last_name THEN
+        SET NEW.last_update = CURRENT_TIMESTAMP;
+    END IF;
+END$$
+DELIMITER ;
+
+
